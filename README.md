@@ -34,9 +34,9 @@ or
 
 ```bash
 # dependencies
-flutter pub add 'flutter_localizations:{"sdk":"flutter"}' intl
+flutter pub add "flutter_localizations@{sdk: flutter}" intl
 # dev dependencies
-flutter pub add --dev 'dt_ex_gen:{"git":"https://github.com/exbraiin/dt_ex_gen.git"}' build_runner
+flutter pub add "dev:dt_ex_gen@{git: https://github.com/exbraiin/dt_ex_gen.git}" dev:build_runner
 ```
 
 ## Configuration
