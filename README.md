@@ -62,6 +62,7 @@ targets:
               recursive: false
           localizations:
             MyLocalization:
+              defaults: false
               output: lib/generated/my_localization.g.dart
               asset: assets/lang/en.json
 ```
@@ -76,6 +77,7 @@ The builder runs once per package; no `generate_for` setting is needed.
 | `directories` | Required for assets. List of directories relative to the package root. |
 | `recursive` | Asset scanning includes subdirectories by default. Set to `false` to scan only direct children. |
 | `asset` | Required for localization. Package-relative path to the JSON file used to generate keys and method signatures. |
+| `defaults` | Optional for localization. If true creates a delegate with default values scanned from 'asset' directory. |
 
 Each entry owns its output file; two entries cannot share an output path. Keep
 output paths outside scanned asset directories and use distinct generated class
@@ -159,7 +161,6 @@ not update asset registrations:
 flutter:
   assets:
     - assets/image/backgrounds/
-    - assets/image/regions/
     - assets/lang/
 ```
 
@@ -193,12 +194,6 @@ The runtime delegate is generated in the same file. Its imports include Flutter,
 Configure your `MaterialApp` with the generated delegate:
 
 ```dart
-import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
-
-import 'generated/my_languages.g.dart';
-import 'generated/my_localization.g.dart';
-
 final languageAssets = <Locale, String>{
   const Locale('en'): MyLanguages.en,
   const Locale('pt'): MyLanguages.pt,
@@ -206,12 +201,16 @@ final languageAssets = <Locale, String>{
 
 MaterialApp(
   supportedLocales: languageAssets.keys,
+  // or if 'defaults' is true:
+  supportedLocales: MyLocalization.supportedLocales,  
   localizationsDelegates: [
     ...GlobalMaterialLocalizations.delegates,
     MyLocalization.createDelegate(
       assets: languageAssets,
       fallback: const Locale('en'),
     ),
+    // or if 'defaults' is true:
+    MyLocalization.delegate,
   ],
   home: const HomePage(),
 );

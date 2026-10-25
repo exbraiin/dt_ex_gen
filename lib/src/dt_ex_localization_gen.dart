@@ -1,7 +1,9 @@
 import 'dart:convert';
 
 import 'package:build/build.dart';
+import 'package:dartx/dartx.dart';
 import 'package:dt_ex_gen/src/utils.dart' as utils;
+import 'package:glob/glob.dart';
 import 'package:source_gen/source_gen.dart';
 
 class DtExLocalizationGen {
@@ -24,19 +26,21 @@ class DtExLocalizationGen {
   ) async {
     utils.validateClassName(className);
     final asset = config['asset'] as String;
+    final defaults = config['defaults'] as bool? ?? false;
     final id = AssetId(buildStep.inputId.package, asset);
     if (!await buildStep.canRead(id)) {
       throw InvalidGenerationSourceError('File $asset does not exist!');
     }
 
     final json = await _loadJson(buildStep, id);
+    final list = defaults ? await _loadAssets(buildStep, id) : <AssetId>[];
 
     final newName = className;
     final buffer = StringBuffer();
 
     buffer.writeln(_getClassKeys(newName, json));
     buffer.writeln(_getClassMethods(newName, json));
-    buffer.writeln(_getClassLocalization(newName, json));
+    buffer.writeln(_getClassLocalization(newName, json, list));
 
     return buffer.toString();
   }
@@ -52,6 +56,16 @@ Future<Map<String, String>> _loadJson(
   } catch (e) {
     throw InvalidGenerationSourceError('Could not load ${asset.path}!');
   }
+}
+
+Future<List<AssetId>> _loadAssets(BuildStep buildStep, AssetId id) async {
+  final reg = RegExp(r'^\w{2}(?:[_-]\w{2})?$');
+  final directory = id.path.substring(0, id.path.lastIndexOf('/') + 1);
+  final files = await buildStep.findAssets(Glob('$directory*.json')).toList();
+  return files
+      .where((e) => reg.hasMatch(e.nameWithoutExtension))
+      .sortedBy((e) => e == id ? 0 : 1)
+      .thenBy((e) => e.path);
 }
 
 String _getClassKeys(String className, Map<String, String> json) {
@@ -122,7 +136,42 @@ String _getClassMethods(String className, Map<String, String> json) {
   return buffer.toString();
 }
 
-String _getClassLocalization(String className, Map<String, String> json) {
+String _getClassLocalization(
+  String className,
+  Map<String, String> json,
+  List<AssetId> list,
+) {
+  final configs = StringBuffer();
+  if (list.isNotEmpty) {
+    String genLocale(AssetId id) {
+      final parts = id.nameWithoutExtension.replaceAll('-', '_').split('_');
+      final second = parts.length > 1 ? ', \'${parts[1].toUpperCase()}\'' : '';
+      return 'Locale(\'${parts.first}\'$second)';
+    }
+
+    configs.writeln('/// The fallback locale');
+    configs.writeln('static const fallback = ${genLocale(list[0])};');
+
+    configs.writeln('/// The supported locales');
+    configs.writeln(
+      'static Set<Locale> get supportedLocales => assets.keys.toSet();',
+    );
+
+    configs.writeln('/// The assets to be passed on createDelegate method.');
+    configs.writeln('static final assets = <Locale, String>{');
+    for (final id in list) {
+      configs.writeln('const ${genLocale(id)}: \'${id.path}\',');
+    }
+    configs.writeln('};');
+
+    configs.writeln(
+      '/// A default delegate with value from [assets] and [fallback]',
+    );
+    configs.writeln(
+      'static final delegate = _${className}Delegate(assets, fallback);',
+    );
+  }
+
   return '''
 /// App localizations
 final class $className {
@@ -134,6 +183,8 @@ final class $className {
     );
     return service!;
   }
+
+  $configs
 
   static LocalizationsDelegate<$className> createDelegate({
     required Map<Locale, String> assets,

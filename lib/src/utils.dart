@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:build/build.dart';
 import 'package:dartx/dartx_io.dart';
 import 'package:source_gen/source_gen.dart';
 
@@ -42,6 +43,10 @@ const _reservedKeywords = {
   ...['switch', 'this', 'throw', 'true', 'try', 'var'],
   ...['void', 'while', 'with', 'yield'],
 };
+
+extension AssetIdExt on AssetId {
+  String get nameWithoutExtension => File(path).nameWithoutExtension;
+}
 
 extension FileSystemEntityExt on FileSystemEntity {
   String get pathNormalized => path.replaceAll('\\', '/');
