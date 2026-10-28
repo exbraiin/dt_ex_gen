@@ -1,11 +1,11 @@
 targets:
   $default:
     builders:
-      dt_ex_gen:dt_ex:
+      dt_ex_gen:
         enabled: true
 
 builders:
-  dt_ex:
+  dt_ex_gen:
     import: "package:dt_ex_gen/builder.dart"
     builder_factories: ["dtExBuilder"]
     # Declare the output type; builder.dart resolves exact paths from options.

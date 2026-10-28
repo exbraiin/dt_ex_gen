@@ -47,7 +47,7 @@ Create `build.yaml` beside the application's `pubspec.yaml`:
 targets:
   $default:
     builders:
-      dt_ex_gen:dt_ex:
+      dt_ex_gen:
         options:
           assets:
             MyImages:
@@ -69,6 +69,10 @@ targets:
 
 Both sections are optional. Add multiple entries to generate multiple files.
 The builder runs once per package; no `generate_for` setting is needed.
+
+The builder uses the package name, so `dt_ex_gen:` is the short form of
+`dt_ex_gen:dt_ex_gen:`. Replace the previous `dt_ex_gen:dt_ex:` key in existing
+configurations with `dt_ex_gen:`.
 
 | Setting | Meaning |
 | --- | --- |
@@ -257,6 +261,6 @@ up by subsequent builds. Runtime-only translation files do not define generated
 method signatures.
 
 If an output is missing, check that the builder options are under
-`dt_ex_gen:dt_ex`, each entry has an `output`, and all input paths are relative to
+`dt_ex_gen`, each entry has an `output`, and all input paths are relative to
 the consuming package root. After changing paths or names, rerun generation and
 update imports to the new output files.
